@@ -1,0 +1,5 @@
+to compile this library, use the following command:
+
+```
+clang -ffreestanding -nostdlib -fno-inline -Wl,--no-entry -Wl,--export-dynamic -Wl,--import-memory -Os -target wasm32 -o utils.wasm *.c
+```

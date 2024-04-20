@@ -43,8 +43,13 @@ void* malloc(uint32_t size) {
     struct block* nextBlock = current->next;
     uint32_t freeSpace;
     if (nextBlock)
-      freeSpace = REMOVE_BLOCK_META((uint32_t)nextBlock - USER_DATA_END(current));
-    else freeSpace = REMOVE_BLOCK_META(UINT32_MAX - USER_DATA_END(current));
+      freeSpace = (uint32_t)nextBlock - USER_DATA_END(current);
+    else freeSpace = UINT32_MAX - USER_DATA_END(current);
+    if (freeSpace < offsetof(struct block, data)) {
+      current = nextBlock;
+      continue;
+    }
+    freeSpace = REMOVE_BLOCK_META(freeSpace);
     if (freeSpace >= size && freeSpace < bestSize) {
       bestSize = freeSpace;
       bestBlock = current;

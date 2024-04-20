@@ -207,15 +207,15 @@ char* strndup(const char* str, uint32_t n) {
 }
 __attribute__((visibility("default")))
 uint32_t strlen(const char* str) {
-  uint32_t i = 0;
-  while (*str++) ++i;
-  return i;
+  const char* s = str;
+  while (*s) ++s;
+  return (uint32_t)(s - str);
 }
 __attribute__((visibility("default")))
 uint32_t strnlen(const char* str, uint32_t n) {
-  uint32_t i = 0;
-  while (i != n && *str++) ++i;
-  return i;
+  const char* s = str;
+  while (n-- && *s) ++s;
+  return (uint32_t)(s - str);
 }
 __attribute__((visibility("default")))
 char* strpbrk(const char* str, const char* accept) {
@@ -252,9 +252,12 @@ uint32_t strcspn(const char* str, const char* reject) {
 }
 __attribute__((visibility("default")))
 char* strstr(const char* str, const char* substr) {
-  uint32_t len = strlen(substr);
-  while (*str) {
-    if (strncmp(str, substr, len) == 0)
+  uint32_t len = strlen(str);
+  uint32_t sublen = strlen(substr);
+  if (sublen == 0)
+    return (char*)str;
+  while (len-- >= sublen) {
+    if (*str == *substr && strncmp(str, substr, sublen) == 0)
       return (char*)str;
     ++str;
   }

@@ -4,6 +4,10 @@
 #include <stddef.h>
 
 extern uint32_t __heap_base;
+extern uint32_t __global_base;
+extern uint32_t __data_end;
+extern uint32_t __stack_low;
+extern uint32_t __stack_high;
 
 struct block {
   uint32_t size;
@@ -17,13 +21,119 @@ struct block* head = NULL;
 #define USER_DATA_END(blk) (USER_DATA_START(blk) + (blk)->size)
 #define REMOVE_BLOCK_META(blk) ((uint32_t)(blk) - offsetof(struct block, data))
 
+void validateAccess(void* addr, uint32_t size) {
+  if ((addr >= (void*)&__global_base && addr + size <= (void*)&__data_end) ||
+      (addr >= (void*)&__stack_low && addr + size <= (void*)&__stack_high))
+    return;
+  struct block* current = head;
+  while (current) {
+    if ((uint32_t)addr >= USER_DATA_START(current) && (uint32_t)addr + size <= USER_DATA_END(current))
+      return;
+    current = current->next;
+  }
+  __builtin_trap();
+}
+
 __attribute__((visibility("default")))
-void* malloc(uint32_t size) {
+int8_t readInt8(void* addr) {
+  validateAccess(addr, sizeof(int8_t));
+  return *(int8_t*)addr;
+}
+__attribute__((visibility("default")))
+uint8_t readUint8(void* addr) {
+  validateAccess(addr, sizeof(uint8_t));
+  return *(uint8_t*)addr;
+}
+__attribute__((visibility("default")))
+int16_t readInt16(void* addr) {
+  validateAccess(addr, sizeof(int16_t));
+  return *(int16_t*)addr;
+}
+__attribute__((visibility("default")))
+uint16_t readUint16(void* addr) {
+  validateAccess(addr, sizeof(uint16_t));
+  return *(uint16_t*)addr;
+}
+__attribute__((visibility("default")))
+int32_t readInt32(void* addr) {
+  validateAccess(addr, sizeof(int32_t));
+  return *(int32_t*)addr;
+}
+__attribute__((visibility("default")))
+uint32_t readUint32(void* addr) {
+  validateAccess(addr, sizeof(uint32_t));
+  return *(uint32_t*)addr;
+}
+__attribute__((visibility("default")))
+double readDouble(void* addr) {
+  validateAccess(addr, sizeof(double));
+  return *(double*)addr;
+}
+__attribute__((visibility("default")))
+float readFloat(void* addr) {
+  validateAccess(addr, sizeof(float));
+  return *(float*)addr;
+}
+
+__attribute__((visibility("default")))
+int8_t writeInt8(void* addr, int8_t value) {
+  validateAccess(addr, sizeof(int8_t));
+  return *(int8_t*)addr = value;
+}
+__attribute__((visibility("default")))
+uint8_t writeUint8(void* addr, uint8_t value) {
+  validateAccess(addr, sizeof(uint8_t));
+  return *(uint8_t*)addr = value;
+}
+__attribute__((visibility("default")))
+int16_t writeInt16(void* addr, int16_t value) {
+  validateAccess(addr, sizeof(int16_t));
+  return *(int16_t*)addr = value;
+}
+__attribute__((visibility("default")))
+uint16_t writeUint16(void* addr, uint16_t value) {
+  validateAccess(addr, sizeof(uint16_t));
+  return *(uint16_t*)addr = value;
+}
+__attribute__((visibility("default")))
+int32_t writeInt32(void* addr, int32_t value) {
+  validateAccess(addr, sizeof(int32_t));
+  return *(int32_t*)addr = value;
+}
+__attribute__((visibility("default")))
+uint32_t writeUint32(void* addr, uint32_t value) {
+  validateAccess(addr, sizeof(uint32_t));
+  return *(uint32_t*)addr = value;
+}
+__attribute__((visibility("default")))
+double writeDouble(void* addr, double value) {
+  validateAccess(addr, sizeof(double));
+  return *(double*)addr = value;
+}
+__attribute__((visibility("default")))
+float writeFloat(void* addr, float value) {
+  validateAccess(addr, sizeof(float));
+  return *(float*)addr = value;
+}
+
+void validateMemory(void* ptr, uint32_t n) {
+  volatile uint8_t* p = (uint8_t*)ptr;
+  p[n - sizeof(uint8_t)] = p[n - sizeof(uint8_t)];
+}
+
+__attribute__((visibility("default")))
+void* wasmMalloc(uint32_t size) {
   if (size == 0)
     return NULL;
   struct block* current = head;
   if (!current) {
     struct block* newBlock = (struct block*)&__heap_base;
+    {
+      uint32_t res;
+      if (__builtin_add_overflow(offsetof(struct block, data), size, &res))
+        return NULL;
+      validateMemory(newBlock, res);
+    }
     newBlock->size = size;
     newBlock->next = NULL;
     head = newBlock;
@@ -39,7 +149,7 @@ void* malloc(uint32_t size) {
       isBestBeforeHead = true;
     }
   }
-  while (current && bestSize != size) {
+  while (current) {
     struct block* nextBlock = current->next;
     uint32_t freeSpace;
     if (nextBlock)
@@ -55,17 +165,23 @@ void* malloc(uint32_t size) {
       bestBlock = current;
       if (isBestBeforeHead)
         isBestBeforeHead = false;
+      if (freeSpace == size)
+        break;
     }
     current = nextBlock;
   }
+  if (!bestBlock)
+    return NULL;
   if (isBestBeforeHead) {
     struct block* newBlock = (struct block*)&__heap_base;
+    validateMemory(newBlock, offsetof(struct block, data) + size);
     newBlock->size = size;
     newBlock->next = head;
     head = newBlock;
     return (void*)USER_DATA_START(newBlock);
   }
   struct block* newBlock = (struct block*)USER_DATA_END(bestBlock);
+  validateMemory(newBlock, offsetof(struct block, data) + size);
   newBlock->size = size;
   newBlock->next = bestBlock->next;
   bestBlock->next = newBlock;
@@ -74,10 +190,12 @@ void* malloc(uint32_t size) {
 
 __attribute__((visibility("default")))
 void* calloc(uint32_t size, uint32_t nmemb) {
-  size_t res = 0;
+  uint32_t res = 0;
   if (__builtin_mul_overflow(nmemb, size, &res))
     return NULL;
   void* ptr = malloc(res);
+  if (!ptr)
+    return NULL;
   memset(ptr, '\0', res);
   return ptr;
 }
@@ -103,14 +221,13 @@ void free(void* ptr) {
 }
 
 __attribute__((visibility("default")))
-void* realloc(void* ptr, uint32_t size) {
+void* wasmRealloc(void* ptr, uint32_t size) {
   if (size == 0) {
     if (ptr != NULL)
       free(ptr);
     return NULL;
-  }
-  if (ptr == NULL)
-    return malloc(size);
+  } else if (ptr == NULL)
+    return wasmMalloc(size);
   struct block* current = head;
   while (current) {
     if ((void*)USER_DATA_START(current) == ptr)
@@ -123,18 +240,17 @@ void* realloc(void* ptr, uint32_t size) {
     return (void*)USER_DATA_START(current);
   {
     struct block* next = current->next;
-    if (next) {
-      uint32_t freeSpace = (uint32_t)next - USER_DATA_START(current);
-      if (freeSpace >= size) {
-        current->size = size;
-        return (void*)USER_DATA_START(current);
-      }
-    } else {
+    uint32_t freeSpace;
+    if (next)
+      freeSpace = (uint32_t)next - USER_DATA_START(current);
+    else freeSpace = UINT32_MAX - USER_DATA_START(current);
+    if (freeSpace >= size) {
+      validateMemory(current, offsetof(struct block, data) + size);
       current->size = size;
       return (void*)USER_DATA_START(current);
     }
   }
-  void* newPtr = malloc(size);
+  void* newPtr = wasmMalloc(size);
   memcpy(newPtr, ptr, current->size);
   free(ptr);
   return newPtr;

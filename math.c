@@ -1,3 +1,4 @@
+#include "malloc.h"
 #include "math.h"
 
 __attribute__((visibility("default")))
@@ -51,6 +52,30 @@ double ceil(double x) {
 __attribute__((visibility("default")))
 float ceilf(float x) {
   return __builtin_ceilf(x);
+}
+__attribute__((visibility("default")))
+double remainder(double x, double y) {
+  double n = round(x / y);
+  double result = x - (n * y);
+  if (fabs(result) == 0.5 &&
+      fmod(n, 2.0) != 0.0) {
+    if (result < 0.0)
+      result += y;
+    else result -= y;
+  }
+  return result;
+}
+__attribute__((visibility("default")))
+float remainderf(float x, float y) {
+  float n = roundf(x / y);
+  float result = x - (n * y);
+  if (fabsf(result) == 0.5f &&
+      fmodf(n, 2.0f) != 0.0f) {
+    if (result < 0.0f)
+      result += y;
+    else result -= y;
+  }
+  return result;
 }
 __attribute__((visibility("default")))
 double round(double x) {
@@ -111,47 +136,47 @@ float fmodf(float x, float y) {
 __attribute__((visibility("default")))
 double modf(double x, double* i) {
   double t = trunc(x);
-  *i = t;
+  writeDouble((void*)i, t);
   return x - t;
 }
 __attribute__((visibility("default")))
 float modff(float x, float* i) {
   float t = truncf(x);
-  *i = t;
+  writeFloat((void*)i, t);
   return x - t;
 }
 __attribute__((visibility("default")))
 double frexp(double x, int* exp) {
-  *exp = 0;
+  writeInt32(exp, 0);
   if (x == 0.0)
     return 0.0;
   if (x < 0.5) {
     do {
       x *= 2.0;
-      *exp -= 1;
+      writeInt32(exp, readInt32(exp) - 1);
     } while (x < 0.5);
   } else if (x >= 1.0) {
     do {
       x /= 2.0;
-      *exp += 1;
+      writeInt32(exp, readInt32(exp) + 1);
     } while (x >= 1.0);
   }
   return x;
 }
 __attribute__((visibility("default")))
 float frexpf(float x, int* exp) {
-  *exp = 0;
+  writeInt32(exp, 0);
   if (x == 0.0f)
     return 0.0f;
   if (x < 0.5f) {
     do {
       x *= 2.0f;
-      *exp -= 1;
+      writeInt32(exp, readInt32(exp) - 1);
     } while (x < 0.5f);
   } else if (x >= 1.0f) {
     do {
       x /= 2.0f;
-      *exp += 1;
+      writeInt32(exp, readInt32(exp) + 1);
     } while (x >= 1.0f);
   }
   return x;

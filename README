@@ -1,5 +1,7 @@
 to compile this library, use the following command:
 
 ```
-clang -ffreestanding -nostdlib -fno-inline -Wl,--no-entry -Wl,--export-dynamic -Wl,--import-memory -Os -target wasm32 -o utils.wasm *.c
+clang -ffreestanding -nostdlib -fno-inline -Wl,--no-entry -Wl,--export-dynamic -Wl,--import-memory -Wl,--import-undefined -Os -target wasm32 -o utils.wasm *.c
 ```
+
+for browser use, use `await wasc` or `wasc.then(ex => {...})` to wait for the library to be available. then the exported functions will be in `wasc` for you to use

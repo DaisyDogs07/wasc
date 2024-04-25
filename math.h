@@ -14,6 +14,8 @@ double floor(double x);
 float floorf(float x);
 double ceil(double x);
 float ceilf(float x);
+double remainder(double x, double y);
+float remainderf(float x, float y);
 double round(double x);
 float roundf(float x);
 long lround(double x);

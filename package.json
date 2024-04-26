@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "install": "clang -ffreestanding -nostdlib -fno-inline -Wl,--no-entry -Wl,--export-dynamic -Wl,--import-memory -Wl,--import-undefined -Os -target wasm32 -o utils.wasm *.c"
+    "install": "sh ./build.sh"
   },
   "author": "DaisyDogs07",
   "license": "ISC"

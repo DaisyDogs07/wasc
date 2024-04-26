@@ -183,27 +183,19 @@ float frexpf(float x, int* exp) {
 }
 __attribute__((visibility("default")))
 double fmax(double x, double y) {
-  if (x < y)
-    return y;
-  return x;
+  return __builtin_wasm_max_f64(x, y);
 }
 __attribute__((visibility("default")))
 float fmaxf(float x, float y) {
-  if (x < y)
-    return y;
-  return x;
+  return __builtin_wasm_max_f32(x, y);
 }
 __attribute__((visibility("default")))
 double fmin(double x, double y) {
-  if (x < y)
-    return x;
-  return y;
+  return __builtin_wasm_min_f64(x, y);
 }
 __attribute__((visibility("default")))
 float fminf(float x, float y) {
-  if (x < y)
-    return x;
-  return y;
+  return __builtin_wasm_min_f32(x, y);
 }
 __attribute__((visibility("default")))
 bool finite(double x) {

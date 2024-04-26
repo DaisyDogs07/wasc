@@ -3,24 +3,6 @@
     initial: Math.ceil((64 * 1024 * 1024) / (64 * 1024))
   });
   let ex;
-  let wasmMalloc;
-  let wasmRealloc;
-
-  function malloc(size) {
-    try {
-      return wasmMalloc(size);
-    } catch {
-      return 0;
-    }
-  }
-
-  function realloc(ptr, size) {
-    try {
-      return wasmRealloc(ptr, size);
-    } catch {
-      return 0;
-    }
-  }
 
   function makeString(str) {
     const ptr = malloc(str.length + 1);
@@ -49,20 +31,13 @@
         new WebAssembly.Module(fs.readFileSync('utils.wasm')),
         {
           env: {
-            malloc,
             memory
           }
         }
       ).exports
     };
     module.exports = ex;
-    wasmMalloc = ex.wasmMalloc;
-    wasmRealloc = ex.wasmRealloc;
-    delete ex.wasmMalloc;
-    delete ex.wasmRealloc;
     Object.assign(ex, {
-      malloc,
-      realloc,
       makeString,
       getString
     });
@@ -76,7 +51,6 @@
               new WebAssembly.Module(buf),
               {
                 env: {
-                  malloc,
                   memory
                 }
               }
@@ -93,13 +67,7 @@
       Object.assign(window, {
         wasc: ex
       });
-      wasmMalloc = ex.wasmMalloc;
-      wasmRealloc = ex.wasmRealloc;
-      delete ex.wasmMalloc;
-      delete ex.wasmRealloc;
       Object.assign(ex, {
-        malloc,
-        realloc,
         makeString,
         getString
       });

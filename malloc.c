@@ -147,9 +147,8 @@ void* malloc(uint32_t size) {
     struct block* newBlock = (struct block*)&__heap_base;
     {
       uint32_t res;
-      if (__builtin_add_overflow(offsetof(struct block, data), size, &res))
-        return NULL;
-      if (!VALID_ADDR(newBlock, res))
+      if (__builtin_add_overflow(offsetof(struct block, data), size, &res) ||
+          !VALID_ADDR(newBlock, res))
         return NULL;
     }
     newBlock->size = size;
@@ -272,6 +271,8 @@ void* realloc(void* ptr, uint32_t size) {
     }
   }
   void* newPtr = malloc(size);
+  if (!newPtr)
+    return NULL;
   memcpy(newPtr, ptr, current->size);
   free(ptr);
   return newPtr;

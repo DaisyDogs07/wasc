@@ -22,6 +22,7 @@ uint64_t writeUint64(void* addr, uint64_t value);
 float writeFloat(void* addr, float value);
 double writeDouble(void* addr, double value);
 void* malloc(uint32_t size);
-void* calloc(uint32_t size, uint32_t nmemb);
+void* calloc(uint32_t nmemb, uint32_t size);
 void free(void* ptr);
 void* realloc(void* ptr, uint32_t size);
+void* reallocarray(void* ptr, uint32_t nmemb, uint32_t size);

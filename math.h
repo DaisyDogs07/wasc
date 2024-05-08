@@ -1,6 +1,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef long int time_t;
+
 int abs(int x);
 long labs(long x);
 long long llabs(long long x);
@@ -8,6 +10,7 @@ double fabs(double x);
 float fabsf(float x);
 double copysign(double x, double y);
 float copysignf(float x, float y);
+double difftime(time_t time1, time_t time2);
 double fdim(double x, double y);
 float fdimf(float x, float y);
 double floor(double x);

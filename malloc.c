@@ -208,14 +208,13 @@ void* malloc(uint32_t size) {
 }
 
 __attribute__((visibility("default")))
-void* calloc(uint32_t size, uint32_t nmemb) {
+void* calloc(uint32_t nmemb, uint32_t size) {
   uint32_t res = 0;
-  if (__builtin_mul_overflow(nmemb, size, &res))
+  if (__builtin_mul_overflow(size, nmemb, &res))
     return NULL;
   void* ptr = malloc(res);
-  if (!ptr)
-    return NULL;
-  memset(ptr, '\0', res);
+  if (ptr)
+    memset(ptr, '\0', res);
   return ptr;
 }
 
@@ -276,4 +275,12 @@ void* realloc(void* ptr, uint32_t size) {
   memcpy(newPtr, ptr, current->size);
   free(ptr);
   return newPtr;
+}
+
+__attribute__((visibility("default")))
+void* reallocarray(void* ptr, uint32_t nmemb, uint32_t size) {
+  uint32_t res = 0;
+  if (__builtin_mul_overflow(size, nmemb, &res))
+    return NULL;
+  return realloc(ptr, res);
 }

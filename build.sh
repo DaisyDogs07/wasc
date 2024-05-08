@@ -7,8 +7,16 @@ then
 fi
 
 for file in ./*.c; do
-  clang -ffreestanding -nostdlib -fno-inline -Os -target wasm32 -c $file
+  if ! clang -ffreestanding -nostdlib -fno-inline -O2 -target wasm32 -c $file
+  then
+    rm *.o
+    exit 1
+  fi
 done
 
-wasm-ld --no-entry --export-dynamic --import-memory --strip-all -o utils.wasm *.o
+if ! wasm-ld --no-entry --export-dynamic --import-memory --strip-all -o utils.wasm *.o
+then
+  rm *.o
+  exit 1
+fi
 rm *.o

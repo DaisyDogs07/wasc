@@ -30,6 +30,12 @@ float copysignf(float x, float y) {
   return __builtin_copysignf(x, y);
 }
 __attribute__((visibility("default")))
+double difftime(time_t time1, time_t time2) {
+  if (time1 < time2)
+    return time2 - time1;
+  return time1 - time2;
+}
+__attribute__((visibility("default")))
 double fdim(double x, double y) {
   return fmax(x - y, 0.0);
 }

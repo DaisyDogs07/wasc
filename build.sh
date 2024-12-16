@@ -2,7 +2,7 @@
 
 if ! command -v clang >/dev/null || ! command -v wasm-ld >/dev/null
 then
-  echo "Clang with WebAssembly support not found"
+  echo "Clang with WebAssembly support not found" 1>&2
   exit 1
 fi
 
